@@ -1,1 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遊戲中介工具 SDK 文件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        <!-- Chosen Palette: Stone & Teal -->
+        <!-- Application Structure Plan: A tab-based SPA with a sticky top navigation bar (總覽, 核心架構, API 參考, 核心流程, 環境建置, 整合指南, 發布說明, 錯誤碼). This structure is chosen because developers often need to access specific information non-linearly (e.g., quickly looking up an API or an error code). A tabbed interface provides this random access efficiently. Key interactions include tab switching for main content, a master-detail view for the API reference, and interactive HTML-based flowcharts to visualize processes without relying on external libraries. This design prioritizes developer workflow and information retrieval speed over the linear narrative of the source document. -->
+        <!-- Visualization & Content Choices: Report Info: Core Architecture -> Goal: Organize -> Viz: Icon-based cards -> Justification: Visually separates and clarifies the role of each module. | Report Info: API List -> Goal: Inform/Organize -> Viz: Interactive Master-Detail List -> Interaction: Click to view details, copy code -> Justification: The most efficient UI pattern for reference documentation, allowing for quick lookups and direct use of examples. | Report Info: Core Flows -> Goal: Change/Organize -> Viz: HTML/CSS-based flow diagrams with numbered steps -> Justification: Recreates flowchart visuals without SVG/Mermaid, making complex processes more tangible and understandable with clear sequencing. | Report Info: Environment Setup & Integration -> Goal: Inform/Instruct -> Viz: Numbered lists with code blocks -> Interaction: Copy-to-clipboard buttons -> Justification: Directly improves developer workflow by making instructions and code snippets easily usable. | Report Info: Release Notes -> Goal: Change -> Viz: Timeline-style list with color-coded tags -> Justification: Makes version changes scannable and easy to digest. | Report Info: Error Codes -> Goal: Inform/Troubleshoot -> Viz: Definition list with detailed explanations -> Justification: Provides quick access to troubleshooting information. -->
+        <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #292524; /* stone-800 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            border-bottom-color: #0d9488; /* teal-600 */
+            color: #0f766e; /* teal-700 */
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .api-list-item.active {
+            background-color: #ccfbf1; /* teal-100 */
+            color: #134e4a; /* teal-900 */
+            font-weight: 500;
+        }
+        .flowchart-wrapper {
+            background: repeating-linear-gradient(45deg, #fafaf9, #fafaf9 10px, #f5f5f4 10px, #f5f5f4 20px);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e7e5e4;
+            overflow-x: auto;
+        }
+        .flow-step {
+            border: 1px solid #a8a29e;
+            background-color: #ffffff;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            min-width: 180px;
+            z-index: 10;
+            position: relative;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .flow-step:hover {
+            border-color: #0d9488;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+        .flow-arrow {
+            position: relative;
+            width: 2px;
+            height: 40px; /* Space between steps */
+            background-color: #a8a29e;
+            margin: 0 auto;
+            z-index: 1;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #a8a29e;
+        }
+        .release-tag {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        .tag-feature { background-color: #dcfce7; color: #166534; }
+        .tag-improvement { background-color: #dbeafe; color: #1e40af; }
+        .tag-initial { background-color: #e0e7ff; color: #3730a3; }
+        .code-block-wrapper {
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #44403c; /* stone-700 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .copy-btn:hover {
+            background-color: #57534e; /* stone-600 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-stone-800">遊戲中介工具 SDK 文件</h1>
+                <p class="text-stone-500 mt-1">一份將技術文件轉化為動態體驗的指南</p>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-stone-200 sticky top-[85px] sm:top-[93px] z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-wrap -mb-px">
+                    <a href="#" class="nav-link active py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="overview">總覽</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="architecture">核心架構</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="api">API 參考</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="flows">核心流程</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="environment">環境建置</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="integration">整合指南</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="releases">發布說明</a>
+                    <a href="#" class="nav-link py-3 px-4 text-sm sm:text-base font-medium text-stone-600" data-target="errors">錯誤碼參考</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-4">SDK 商業邏輯與價值</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">
+                        本節闡述了遊戲中介軟體 SDK 的核心商業價值。其目標是作為連接遊戲前端與後端服務的橋樑，將複雜的底層技術抽象化，從而讓開發團隊能夠專注於創造卓越的遊戲體驗，同時確保產品的穩定性、安全性與可擴展性。
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">🚀 簡化開發流程</h3>
+                            <p class="text-sm text-stone-600">封裝複雜的網路通訊、資料處理等底層邏輯，讓開發者能專注於遊戲玩法與使用者體驗，大幅縮短開發週期。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">🛡️ 確保資料一致性與安全性</h3>
+                            <p class="text-sm text-stone-600">透過標準化協定與錯誤處理，確保玩家餘額、遊戲結果等交易資料在傳輸時的準確性與完整性，降低風險。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">🎮 提升使用者體驗</h3>
+                            <p class="text-sm text-stone-600">支援實時互動、內建斷線重連機制與即時事件通知，提供流暢、不中斷的遊戲體驗，增強玩家的投入感。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">🧩 支援多樣化遊戲功能</h3>
+                            <p class="text-sm text-stone-600">模組化設計易於擴展，能快速支援會話管理、彩金系統、玩家資產管理等多樣化的遊戲功能需求。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">🔧 易於維護與升級</h3>
+                            <p class="text-sm text-stone-600">核心通訊邏輯集中在 SDK 中，當後端服務升級時，僅需更新 SDK，大幅減少對遊戲客戶端的修改。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section id="architecture" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">核心架構</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本 SDK 採用模組化設計，將複雜的功能拆解為幾個獨立且專注的核心模組。這種設計提高了可維護性與擴展性，讓各個部分能高效協同工作，為遊戲客戶端提供穩定且高效的後端通訊能力。</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-5 border-l-4 border-teal-500 bg-teal-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-teal-900">`GSMiddleware.ts` (核心)</h3>
+                            <p class="mt-1 text-sm text-teal-800">作為 SDK 的主要入口點，封裝了所有高階 API，處理遊戲邏輯層的請求與事件分發。</p>
+                        </div>
+                        <div class="p-5 border-l-4 border-sky-500 bg-sky-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-sky-900">`ConnectManager.ts` (連線管理)</h3>
+                            <p class="mt-1 text-sm text-sky-800">負責 WebSocket/STOMP 連線的建立、維護、斷線偵測、自動重連及訊息的發送與訂閱。</p>
+                        </div>
+                        <div class="p-5 border-l-4 border-amber-500 bg-amber-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-amber-900">`EventHandler.ts` (事件處理)</h3>
+                            <p class="mt-1 text-sm text-amber-800">提供全局事件發布與訂閱機制，確保 SDK 內部模組和遊戲客戶端能透過標準事件進行通訊。</p>
+                        </div>
+                        <div class="p-5 border-l-4 border-red-500 bg-red-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-red-900">`MessageHandler.ts` (訊息處理)</h3>
+                            <p class="mt-1 text-sm text-red-800">處理與父容器 (iframe) 之間的 `postMessage` 通訊，用於特殊訊息（如重連票據更新）。</p>
+                        </div>
+                        <div class="p-5 border-l-4 border-indigo-500 bg-indigo-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-indigo-900">`index.ts` (入口/導出)</h3>
+                            <p class="mt-1 text-sm text-indigo-800">作為 SDK 的主要導出檔案，定義了對外暴露的介面、常量和類別，方便遊戲客戶端導入。</p>
+                        </div>
+                        <div class="p-5 border-l-4 border-purple-500 bg-purple-50 rounded-r-lg">
+                            <h3 class="text-lg font-bold text-purple-900">`utils` (工具)</h3>
+                            <p class="mt-1 text-sm text-purple-800">包含常量、介面和錯誤代碼，提供統一的數據結構和通訊規範，確保各模組之間數據的一致性。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Reference Section -->
+            <section id="api" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">API 參考</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">此處為 SDK 的詳細 API 文件。點擊左側列表中的方法以查看其詳細說明、參數和程式碼範例。所有範例都提供了「複製」按鈕，以方便您在開發中快速使用。</p>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="md:w-1/3 lg:w-1/4">
+                            <ul id="api-list" class="bg-stone-50 rounded-lg border border-stone-200 overflow-hidden"></ul>
+                        </div>
+                        <div id="api-detail" class="md:w-2/3 lg:w-3/4 flex-1"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Flows Section -->
+            <section id="flows" class="content-section">
+                 <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">核心流程</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本節透過步驟化說明，幫助您理解 SDK 的核心運作機制，包括初始化連線、登入以及斷線重連等關鍵循環。</p>
+                    
+                    <h3 class="text-xl font-bold text-stone-800 mb-6 text-center">4.1 SDK 初始化與連線流程</h3>
+                    <div class="flowchart-wrapper flex flex-col items-center">
+                        <div class="flow-step">1. 遊戲啟動與 SDK 實例化</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">2. 發起連線請求 (mySDK.connect())</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">3. 建立底層連線 (WebSocket & STOMP)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">4. SDK 內部訂閱</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">5. 連線成功通知 (Connection 事件)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">6. 連線失敗處理 (ConnectionLost 事件)</div>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-6 mt-12 text-center">4.2 登入流程</h3>
+                    <div class="flowchart-wrapper flex flex-col items-center">
+                        <div class="flow-step">1. 發起登入請求 (mySDK.login())</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">2. 判斷登入類型並發送請求</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">3. 伺服器處理與回應 (loginResponse)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">4. SDK 處理回應與事件廣播 (Login / LoginError 事件)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">5. 遊戲處理登入結果</div>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-6 mt-12 text-center">4.3 斷線與重新連線流程</h3>
+                    <div class="flowchart-wrapper flex flex-col items-center">
+                        <div class="flow-step">1. 偵測連線中斷 (onStompError / onDisconnect)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">2. 廣播連線中斷事件 (ConnectionLost 事件)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">3. 遊戲觸發重連 (mySDK.reconnect() - 可選)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">4. 啟動內部重連機制</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">5. 處理重連結果 (Connection / Error 事件)</div>
+                        <div class="flow-arrow"></div>
+                        <div class="flow-step">6. 遊戲處理後續邏輯</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Environment Setup Section -->
+            <section id="environment" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">環境建置</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本節將說明如何為遊戲中介軟體 SDK 專案設置開發環境，並將其整合到遊戲專案中。</p>
+                    
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">5.1 前置條件</h3>
+                    <ul class="list-disc list-inside text-stone-600 space-y-2 mb-8">
+                        <li><b>Node.js</b>: 建議使用 LTS (長期支援) 版本。<br>驗證安裝：在終端機中執行 <code>node -v</code> 和 <code>npm -v</code>。</li>
+                        <li><b>npm (Node Package Manager)</b> 或 <b>Yarn</b>: 通常隨 Node.js 一起安裝。<br>驗證安裝：在終端機中執行 <code>npm -v</code> 或 <code>yarn -v</code>。</li>
+                        <li><b>Git</b>: 用於版本控制。<br>驗證安裝：在終端機中執行 <code>git --version</code>。</li>
+                        <li><b>程式碼編輯器</b>: 推薦使用 Visual Studio Code，並安裝相關的 TypeScript 擴充功能。</li>
+                    </ul>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">5.2 專案設置步驟</h3>
+                    <ol class="list-decimal list-inside text-stone-600 space-y-4 mb-8">
+                        <li>
+                            <b>複製專案儲存庫</b>：
+                            首先，從您的版本控制系統（例如 Git）複製 SDK 專案。
+                            <div class="code-block-wrapper mt-2">
+                                <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>git clone [您的專案儲存庫 URL]
+cd [您的專案目錄]</code></pre>
+                                <button class="copy-btn">複製</button>
+                            </div>
+                        </li>
+                        <li>
+                            <b>安裝依賴套件</b>：
+                            進入專案目錄後，使用 npm 或 Yarn 安裝所有必要的依賴套件（包括開發依賴和運行時依賴）。這些依賴通常定義在 <code>package.json</code> 檔案中。
+                            <div class="code-block-wrapper mt-2">
+                                <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code># 使用 npm
+npm install
+
+# 或者使用 Yarn
+yarn install</code></pre>
+                                <button class="copy-btn">複製</button>
+                            </div>
+                            此步驟會下載並安裝例如 <code>@stomp/stompjs</code>, <code>rollup</code>, <code>typescript</code> 等套件。
+                        </li>
+                        <li>
+                            <b>編譯 SDK</b>：
+                            SDK 原始碼是使用 TypeScript 編寫的，需要將其編譯為 JavaScript。專案的 <code>package.json</code> 中定義了一個 <code>build</code> 腳本來執行此操作。
+                            <div class="code-block-wrapper mt-2">
+                                <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>npm run build
+# 或者
+yarn build</code></pre>
+                                <button class="copy-btn">複製</button>
+                            </div>
+                            此命令會根據 <code>rollup.config.js</code> 將 <code>src/index.ts</code> 編譯到 <code>dist/index.js</code> 和 <code>dist/index.d.ts</code>。
+                        </li>
+                    </ol>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">5.3 專案打包與依賴 (`package.json` & `rollup.config.js`)</h3>
+                    <h4 class="text-lg font-bold text-stone-700 mb-2">5.3.1 `package.json` 說明</h4>
+                    <p class="text-stone-600 mb-4">`package.json` 檔案定義了專案的元數據、腳本命令、依賴項和開發依賴項。</p>
+                    <div class="code-block-wrapper mb-8">
+                        <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>{
+  "name": "@ji/game-middleware-sdk",
+  "version": "0.0.2",
+  "description": "game-middleware-sdk",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "rollup --config",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "module": "ES6",
+  "author": "sdk",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^8.2.3",
+    "@types/node": "^20.17.30",
+    "rollup": "^2.53.2",
+    "tslib": "^2.3.0",
+    "typescript": "^4.3.5",
+    "vitest": "^3.1.2"
+  },
+  "dependencies": {
+    "@stomp/stompjs": "^7.0.0"
+  }
+}</code></pre>
+                        <button class="copy-btn">複製</button>
+                    </div>
+                    <p class="text-stone-600 mb-4">詳細說明：</p>
+                    <ul class="list-disc list-inside text-stone-600 space-y-2 mb-8">
+                        <li><b>`name`</b>: 專案的名稱。</li>
+                        <li><b>`version`</b>: 專案的當前版本。</li>
+                        <li><b>`description`</b>: 專案的簡短描述。</li>
+                        <li><b>`main`</b>: 定義了當其他模組導入此專案時的入口點，指向打包後的 `index.js`。</li>
+                        <li><b>`scripts`</b>: 定義了可執行的腳本命令，如 `build` 和 `test`。</li>
+                        <li><b>`files`</b>: 定義了當專案作為 npm 包發布時，應該包含的檔案或目錄。</li>
+                        <li><b>`type`</b>: 指示 Node.js 應將 `.js` 檔案視為 ES 模組。</li>
+                        <li><b>`module`</b>: 再次強調使用 ES6 模組規範。</li>
+                        <li><b>`author`</b>: 專案作者。</li>
+                        <li><b>`license`</b>: 專案的開源許可證。</li>
+                        <li><b>`devDependencies`</b>: 開發依賴項，僅在開發或打包時需要。</li>
+                        <li><b>`dependencies`</b>: 運行時依賴項，專案運行時必須存在。</li>
+                    </ul>
+
+                    <h4 class="text-lg font-bold text-stone-700 mb-2">5.3.2 `rollup.config.js` 說明</h4>
+                    <p class="text-stone-600 mb-4">`rollup.config.js` 是 Rollup 打包工具的配置文件，它定義了如何將專案的原始碼打包成最終的發布檔案。</p>
+                    <div class="code-block-wrapper mb-8">
+                        <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>import typescript from '@rollup/plugin-typescript';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import terser from '@rollup/plugin-terser';
+
+export default {
+    input: 'src/index.ts', // 指定打包的入口檔案
+    output: {
+        // 打包成 esm格式檔案
+        file: './dist/index.js', // 輸出檔案的路徑和名稱
+        format: 'esm', // 輸出模組的格式，'esm' 代表 ES 模組
+        // sourcemap: true, // 用於開發除錯時使用，生成 Source Map 檔案
+    },
+    plugins: [
+        resolve(), // 解析 node_modules 中的模組
+        typescript(), // 處理 TypeScript 檔案
+        commonjs(), // 將 CommonJS 模組轉換為 ES 模組
+        terser(), // 壓縮打包後的程式碼
+    ],
+};</code></pre>
+                        <button class="copy-btn">複製</button>
+                    </div>
+                    <p class="text-stone-600 mb-4">詳細說明：</p>
+                    <ul class="list-disc list-inside text-stone-600 space-y-2 mb-8">
+                        <li><b>`input`</b>: 指定了 SDK 專案的入口檔案 (`src/index.ts`)，Rollup 將從這裡開始分析和打包程式碼。</li>
+                        <li><b>`output`</b>: 定義了打包後的輸出配置，包括輸出檔案路徑、格式等。</li>
+                        <li><b>`plugins`</b>: 定義了 Rollup 在打包過程中使用的插件，用於處理不同類型的檔案和優化程式碼。</li>
+                    </ul>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">5.4 整合到遊戲專案</h3>
+                    <p class="text-stone-600 mb-4">一旦 SDK 成功編譯並準備就緒，您可以將其整合到遊戲專案中。</p>
+                    <ol class="list-decimal list-inside text-stone-600 space-y-4">
+                        <li>
+                            <b>複製打包後的檔案</b>：
+                            將 SDK 專案 <code>dist</code> 目錄下的 <code>index.js</code> 和 <code>index.d.ts</code> 檔案複製到您的遊戲專案中適當的位置（例如 <code>assets/libs/sdk</code>）。
+                        </li>
+                        <li>
+                            <b>修改遊戲專案 `package.json` (如果需要)</b>：
+                            如果您的遊戲專案是基於 Cocos Creator 或其他需要 ES Module 支援的環境，請確保其 <code>package.json</code> 中的 <code>type</code> 字段設置為 <code>"module"</code>。
+                        </li>
+                        <li>
+                            <b>在遊戲程式碼中引入 SDK</b>：
+                            在您的遊戲腳本中，使用 ES Module 語法引入 SDK。
+                            <div class="code-block-wrapper mt-2">
+                                <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>import { GSMiddleware, GSM } from "./path/to/your/sdk/index.js";
+
+// 接著即可按照 SDK 的使用方式進行呼叫
+const config = {
+    host: 'your-game-server.com',
+    port: 8080, // 或其他端口
+    uidA: 'player123',
+    gameLoginName: 'gameLogin', // 或 'testGameLogin'
+    sessionID3: 'your-session-id',
+    gameType: 1,
+    gameId: 1001,
+    jackpotGroup: 'groupA'
+};
+const mySDK = new GSMiddleware(config);
+mySDK.connect();</code></pre>
+                                <button class="copy-btn">複製</button>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Integration Guide Section -->
+            <section id="integration" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">整合指南 / 快速入門</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本節將引導您如何在遊戲專案中快速整合並開始使用 SDK。我們將以一個完整的「連線 -> 登入 -> 發送初始化請求」流程作為範例，並提供最佳實踐建議。</p>
+                    
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">6.1 整合步驟概覽</h3>
+                    <ol class="list-decimal list-inside text-stone-600 space-y-2 mb-8">
+                        <li><b>環境準備</b>：確保您的開發環境符合 SDK 的前置條件。</li>
+                        <li><b>導入 SDK</b>：將編譯好的 SDK 檔案導入到您的遊戲專案中。</li>
+                        <li><b>初始化 SDK</b>：建立 <code>GSMiddleware</code> 實例並配置連線參數。</li>
+                        <li><b>監聽事件</b>：註冊必要的事件監聽器，以接收 SDK 的回調。</li>
+                        <li><b>建立連線</b>：呼叫 <code>connect()</code> 方法與伺服器建立連線。</li>
+                        <li><b>執行登入</b>：在連線成功後，發送登入請求。</li>
+                        <li><b>發送初始化指令</b>：登入成功後，發送遊戲初始化指令。</li>
+                    </ol>
+
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">6.2 逐步整合範例</h3>
+                    <p class="text-stone-600 mb-4">假設您正在開發一個基於 TypeScript 的遊戲，以下是一個簡化的程式碼範例，展示如何將 SDK 整合到您的遊戲邏輯中：</p>
+                    <div class="code-block-wrapper mb-8">
+                        <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code>// 假設這是您的遊戲主腳本或入口點
+import { GSMiddleware, GSM } from "./path/to/your/sdk/index.js"; // 請根據實際路徑調整
+
+class GameClient {
+    private mySDK: GSMiddleware;
+    private gameConfig: any; // 您的遊戲配置
+
+    constructor() {
+        // 1. 準備 SDK 配置
+        this.gameConfig = {
+            host: 'your-game-server.com', // 替換為您的實際伺服器地址
+            port: 8080,                   // 替換為您的實際伺服器端口
+            uidA: 'player_unique_id_123', // 替換為實際玩家唯一ID
+            userName: 'TestPlayer',       // 替換為實際玩家名稱
+            gameLoginName: 'gameLogin',   // 或 'testGameLogin' 根據您的需求
+            sessionID3: 'session_id_abc', // 替換為實際sessionID3
+            gameType: 1,
+            gameId: 1001,
+            jackpotGroup: 'default_jp_group'
+        };
+
+        // 2. 初始化 SDK
+        this.mySDK = new GSMiddleware(this.gameConfig);
+
+        // 3. 註冊事件監聽器
+        this.registerSDKEvents();
+
+        // 4. 啟動連線
+        this.mySDK.connect();
+    }
+
+    private registerSDKEvents(): void {
+        // 監聽連線事件
+        this.mySDK.addEventListener(GSM.Event.Connection, this.onConnection.bind(this));
+        this.mySDK.addEventListener(GSM.Event.ConnectionLost, this.onConnectionLost.bind(this));
+
+        // 監聽登入事件
+        this.mySDK.addEventListener(GSM.Event.Login, this.onLogin.bind(this));
+        this.mySDK.addEventListener(GSM.Event.LoginError, this.onLoginError.bind(this));
+
+        // 監聽指令回應 (用於 Spin, Settle, Init 等)
+        this.mySDK.addEventListener(GSM.Event.Command, this.onCommand.bind(this));
+
+        // 監聽錯誤事件
+        this.mySDK.addEventListener(GSM.Event.Error, this.onError.bind(this));
+
+        // 監聽餘額變更事件
+        this.mySDK.addEventListener(GSM.Event.Balance, this.onBalance.bind(this));
+
+        // 監聽彩金事件
+        this.mySDK.addEventListener(GSM.Event.Jackpot, this.onJackpot.bind(this));
+    }
+
+    private onConnection(detail: GSM.IConnection): void {
+        if (detail.success) {
+            console.log('SDK 連線成功！準備登入...');
+            // 5. 連線成功後，執行登入
+            this.mySDK.login();
+        } else {
+            console.error('SDK 連線失敗！');
+            // 處理連線失敗的邏輯，例如顯示錯誤訊息給玩家
+        }
+    }
+
+    private onConnectionLost(detail: GSM.IConnectionLost): void {
+        console.warn('SDK 連線中斷！原因:', detail.reason);
+        // 處理連線中斷的邏輯，例如顯示斷線訊息，並嘗試重新連線
+        // this.mySDK.reconnect(); // 如果需要自動重連
+    }
+
+    private onLogin(data: GSM.ILogin): void {
+        if (data.code === 0 && data.data) {
+            console.log('玩家登入成功！玩家資訊:', data.entity);
+            console.log('當前餘額:', data.entity.balance); // 假設登入回應中包含餘額
+            // 6. 登入成功後，發送遊戲初始化指令
+            this.mySDK.send(GSM.Request.Init, { commandType: GSM.Command.Init });
+        } else {
+            console.error('玩家登入失敗！訊息:', data.message, '錯誤碼:', data.code);
+        }
+    }
+
+    private onLoginError(error: GSM.ILoginError): void {
+        console.error('登入錯誤！錯誤訊息:', error.errorMessage, '錯誤碼:', error.errorCode);
+        // 處理登入錯誤的邏輯
+    }
+
+    private onCommand(data: GSM.ICommand): void {
+        console.log('收到指令回應:', data.cmd, '內容:', data.entity);
+        switch (data.cmd) {
+            case 'h5.initResponse':
+                console.log('遊戲初始化完成！');
+                // 遊戲初始化完成後的邏輯，例如顯示遊戲畫面
+                break;
+            case 'h5.spinResponse':
+                console.log('收到 Spin 結果:', data.entity.spinResult);
+                // 處理 Spin 結果，例如播放動畫
+                break;
+            case 'h5.settlePlayResponse':
+                console.log('收到 Settle 結果:', data.entity.balance);
+                // 處理 Settle 結果，例如更新餘額顯示
+                break;
+            // ... 處理其他指令回應
+            default:
+                console.log('未知指令回應:', data.cmd);
+                break;
+        }
+    }
+
+    private onError(error: GSM.IError): void {
+        console.error('SDK 錯誤！', error.entity.message, '錯誤碼:', error.entity.code);
+        if (error.isForceDisconnect) {
+            console.error('錯誤導致強制斷線！');
+            // 處理強制斷線的邏輯
+        }
+    }
+
+    private onBalance(data: GSM.IBalance): void {
+        console.log('餘額更新！新餘額:', data.balance, '時間戳:', data.ts);
+        // 更新遊戲中的餘額顯示
+    }
+
+    private onJackpot(data: GSM.IJackpot): void {
+        console.log('收到 Jackpot 訊息:', data);
+        // 處理 Jackpot 訊息，例如更新彩金池顯示或播放中獎動畫
+    }
+
+    // 範例：發送一個 Spin 請求
+    public sendSpinRequest(betAmount: number, denom: number): void {
+        if (this.mySDK.isConnected()) {
+            const spinPayload = {
+                commandType: GSM.Command.Spin,
+                entity: {
+                    operation: 'NormalSpin', // 或其他操作類型
+                    playerBet: betAmount,
+                    denom: denom,
+                    // ... 其他 Spin 相關參數
+                }
+            };
+            this.mySDK.send(GSM.Request.Spin, spinPayload);
+            console.log('發送 Spin 請求...');
+        } else {
+            console.warn('SDK 未連線，無法發送 Spin 請求。');
+        }
+    }
+
+    // 範例：發送一個 Settle 請求
+    public sendSettleRequest(gameSeqNo: string): void {
+        if (this.mySDK.isConnected()) {
+            const settlePayload = {
+                commandType: GSM.Command.Settle,
+                entity: {
+                    gameSeqNo: gameSeqNo,
+                }
+            };
+            this.mySDK.send(GSM.Request.Settle, settlePayload);
+            console.log('發送 Settle 請求...');
+        } else {
+            console.warn('SDK 未連線，無法發送 Settle 請求。');
+        }
+    }
+}
+
+// 在您的遊戲啟動時創建 GameClient 實例
+// const game = new GameClient();
+// 之後您可以透過 game 實例來觸發遊戲操作，例如：
+// game.sendSpinRequest(100, 1);</code></pre>
+                        <button class="copy-btn">複製</button>
+                    </div>
+                    <h3 class="text-xl font-bold text-stone-800 mb-4">6.3 最佳實踐與注意事項</h3>
+                    <ul class="list-disc list-inside text-stone-600 space-y-2">
+                        <li><b>錯誤處理</b>：務必監聽 <code>GSM.Event.Error</code> 和 <code>GSM.Event.ConnectionLost</code> 事件，並實作適當的錯誤處理和重連邏輯，以提升遊戲的穩定性。</li>
+                        <li><b>生命週期管理</b>：確保在遊戲關閉或切換場景時，正確呼叫 <code>mySDK.disconnect()</code> 以釋放資源。</li>
+                        <li><b>配置管理</b>：將 SDK 的配置參數（如 <code>host</code>, <code>port</code>, <code>apiKey</code> 等）從程式碼中分離出來，例如儲存在配置文件或環境變數中，以便於不同環境的部署和管理。</li>
+                        <li><b>非同步操作</b>：SDK 的連線和請求發送都是非同步操作，請確保您的遊戲邏輯能夠正確處理非同步回調。</li>
+                        <li><b>日誌記錄</b>：在開發和測試階段，開啟詳細的日誌記錄，有助於診斷問題。在生產環境中，則應調整日誌級別以避免過多輸出。</li>
+                        <li><b>效能考量</b>：對於高頻率的操作（如 Spin），應注意請求的頻率和數據量，避免造成伺服器或客戶端的負擔。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Releases Section -->
+            <section id="releases" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">發布說明 / 更新日誌 (Release Notes / Changelog)</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本節提供 SDK 各版本的重點更新摘要，包含新功能、效能改進與錯誤修復，幫助您快速了解每個版本的主要變動。</p>
+                    <div id="release-notes" class="space-y-8"></div>
+                </div>
+            </section>
+
+            <!-- Error Codes Section -->
+            <section id="errors" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold text-teal-700 mb-2">錯誤碼參考</h2>
+                    <p class="text-stone-600 leading-relaxed mb-6">本節詳細列出 SDK 內部定義的錯誤碼及其含義，幫助開發者理解錯誤原因並進行故障排除。除了這些內部錯誤碼，SDK 也會透過 <code>GSM.Event.Error</code> 廣播來自伺服器的錯誤碼，那些錯誤碼的具體含義請參閱後端服務的相關文件。</p>
+                    <div class="space-y-6">
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.DISCONNECT` (1)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：連線已斷開。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：客戶端主動斷開、伺服器關閉連線、網路不穩定等。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：檢查網路狀態，如果需要，可嘗試重新連線。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.CONNECT_FAIL` (4)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：連線失敗。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：伺服器位址或端口錯誤、伺服器未運行、網路防火牆阻擋等。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：檢查配置中的 `host` 和 `port` 是否正確，確認伺服器是否正常運行。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.SUBSCRIPTION_WITHOUT_CONNECT` (901)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：在未建立連線的情況下嘗試訂閱主題。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：在呼叫 `connect()` 成功回調之前，過早地嘗試訂閱。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：確保在收到 `GSM.Event.Connection` 成功事件後再進行主題訂閱。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.DUPLICATE_SUBSCRIPTION` (902)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：嘗試重複訂閱同一個主題。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：遊戲邏輯中多次呼叫訂閱同一個主題。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：確保每個主題只訂閱一次。在重新連線後，SDK 會自動處理必要的訂閱，無需遊戲層面重複操作。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.SUBSCRIPTION_JACKPOT_ERROR` (903)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：彩金訂閱過程中發生錯誤。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：彩金相關配置（如 `jackpotGroup`, `jackpotType`）不正確，或伺服器彩金服務異常。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：檢查 `IConfig` 中的彩金相關配置，並確認後端彩金服務狀態。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">`Code.BROADCAST_FAIL` (904)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：SDK 內部廣播事件失敗。</p>
+                            <p class="text-sm text-stone-600"><b>可能原因</b>：內部事件處理機制異常，通常是 SDK 內部問題。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：如果頻繁出現，請聯繫 SDK 開發團隊進行排查。</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-2">其他錯誤碼 (來自伺服器)</h3>
+                            <p class="text-sm text-stone-600"><b>含義</b>：當 `GSM.Event.Error` 事件觸發時，`IError.entity.code` 會包含來自伺服器的具體錯誤碼。</p>
+                            <p class="text-sm text-stone-600"><b>建議處理</b>：這些錯誤碼的含義應參考後端服務的錯誤碼定義。根據具體含義，向玩家顯示相應的提示，或執行遊戲邏輯的調整。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            const apiList = document.getElementById('api-list');
+            const apiDetail = document.getElementById('api-detail');
+            const integrationContent = document.getElementById('integration-content');
+            const releaseNotesContainer = document.getElementById('release-notes');
+
+            const apiData = {
+                init: {
+                    name: 'GSMiddleware(config: IConfig)',
+                    desc: 'SDK 的建構函式，用於初始化 SDK 並載入必要的配置。這是使用 SDK 的第一步。',
+                    params: [
+                        { name: 'config', type: 'IConfig', desc: '包含伺服器連線資訊、玩家 ID 等的配置物件。' },
+                        { name: 'config.host', type: 'string?', desc: '伺服器主機位址。' },
+                        { name: 'config.port', type: 'number?', desc: '伺服器端口。' },
+                        { name: 'config.uidA', type: 'string?', desc: '玩家的唯一識別碼。' },
+                        { name: 'config.userName', type: 'string?', desc: '玩家名稱。' },
+                        { name: 'config.jackpotGroup', type: 'string?', desc: '彩金群組識別碼。' },
+                        { name: 'config.gameType', type: 'number?', desc: '遊戲類型 ID。' },
+                        { name: 'config.gameId', type: 'number?', desc: '遊戲 ID。' },
+                        { name: 'config.gameLoginName', type: 'string?', desc: '遊戲登入名稱，用於判斷測試或正式登入。' },
+                        { name: 'config.sessionID3', type: 'string?', desc: 'Game Sever所使用的內容。' }
+                    ],
+                    example: `import { GSMiddleware, GSM } from "./index.js";\n\nconst config = {\n  host: 'your-game-server.com',\n  port: 8080,\n  uidA: 'player123',\n  gameLoginName: 'gameLogin',\n  sessionID3: 'your-session-id',\n  gameType: 1,\n  gameId: 1001,\n  jackpotGroup: 'groupA'\n};\nconst mySDK = new GSMiddleware(config);`
+                },
+                connect: {
+                    name: 'connect(): void',
+                    desc: '建立與遊戲伺服器之間的 WebSocket + STOMP 連線。連線成功或失敗會透過事件通知。',
+                    params: [],
+                    example: `mySDK.addEventListener(GSM.Event.Connection, (detail) => {\n  if (detail.success) {\n    console.log('連線成功！');\n  } else {\n    console.log('連線失敗！');\n  }\n});\nmySDK.connect();`
+                },
+                disconnect: {
+                    name: 'disconnect(): void',
+                    desc: '主動斷開與伺服器的連線，並取消所有訂閱。',
+                    params: [],
+                    example: `// 在遊戲關閉或場景切換時呼叫\nmySDK.disconnect();`
+                },
+                reconnect: {
+                    name: 'reconnect(): Promise<void>',
+                    desc: '當連線中斷時，嘗試重新建立連線。SDK 會自動重試最多 3 次，每次間隔 5 秒。',
+                    params: [],
+                    example: `mySDK.addEventListener(GSM.Event.ConnectionLost, () => {\n  console.log('連線中斷，嘗試重新連線...');\n  mySDK.reconnect();\n});`
+                },
+                isConnected: {
+                    name: 'isConnected(): boolean',
+                    desc: '檢查當前 SDK 是否已成功連線到伺服器。',
+                    params: [],
+                    example: `if (mySDK.isConnected()) {\n  console.log('SDK 已連線');\n} else {\n  console.log('SDK 未連線');\n}`
+                },
+                login: {
+                    name: 'login(): void',
+                    desc: '向伺服器發送玩家登入請求。根據配置中的 `gameLoginName` 判斷是測試登入還是正式登入。',
+                    params: [],
+                    example: `mySDK.addEventListener(GSM.Event.Login, (data) => console.log('登入成功:', data));\nmySDK.addEventListener(GSM.Event.LoginError, (error) => console.error('登入失敗:', error));\nmySDK.login();`
+                },
+                send: {
+                    name: 'send(reqName: GSM.Request, body: any, headers?: StompHeaders): void',
+                    desc: '向伺服器發送通用請求。用於發送遊戲指令，例如 Spin, Settle, Init, SetRNG 等。',
+                    params: [
+                        { name: 'reqName', type: 'GSM.Request', desc: '請求的目的地或類型。可選值：`GSM.Request.Login`, `GSM.Request.TestLogin`, `GSM.Request.Init`, `GSM.Request.Spin`, `GSM.Request.Settle`, `GSM.Request.SetRng`, `GSM.Request.Heartbeat`。' },
+                        { name: 'body', type: 'any', desc: '請求的資料內容。其結構取決於 `reqName`。' },
+                        { name: 'headers', type: 'StompHeaders?', desc: '可選的 STOMP 標頭。' }
+                    ],
+                    bodyDetails: `
+                        <p class="text-sm text-stone-600 mt-2"><b>` + "`GSM.Request.Spin` 的 `body` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  commandType: GSM.Command.Spin,
+  entity: {
+    operation: string; // 例如 'NormalSpin'
+    playerBet: number; // 玩家下注金額
+    denom: number;     // 貨幣單位
+    freeGameCard?: string; // 免費遊戲卡 ID (可選)
+    freeSpinCard?: string; // 免費旋轉卡 ID (可選)
+    // ... 其他與 Spin 相關的參數
+  }
+}</code></pre>
+                        <p class="text-sm text-stone-600 mt-4"><b>` + "`GSM.Request.Init` 的 `body` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  commandType: GSM.Command.Init,
+  entity: {} // 通常為空物件(不用帶入)
+}</code></pre>
+                        <p class="text-sm text-stone-600 mt-4"><b>` + "`GSM.Request.Settle` 的 `body` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  commandType: GSM.Command.Settle,
+  entity: object {
+    playerID: string; // 玩家ID
+    sessionID: string; // session
+    gameSeqNo: string; // 遊戲局號
+  }
+}</code></pre>
+                        <p class="text-sm text-stone-600 mt-4"><b>` + "`GSM.Request.SetRng` 的 `body` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  commandType: GSM.Command.SetRng,
+  entity: object {
+    rng: number[]; // SetRng 的參數
+  }
+}</code></pre>
+                    `,
+                    example: `const spinPayload = {\n  commandType: GSM.Command.Spin,\n  entity: {\n    playerBet: 100,\n    denom: 1,\n    //... 其他與 Spin 相關的參數\n  }\n};\nmySDK.send(GSM.Request.Spin, spinPayload);`
+                },
+                addEventListener: {
+                    name: 'addEventListener(eventName: string, callback: Function, context?: any): void',
+                    desc: '註冊一個事件監聽器，以接收來自 SDK 或伺服器的通知。',
+                    params: [
+                        { name: 'eventName', type: 'string', desc: '要監聽的事件名稱。可選值：`GSM.Event.Connection`, `GSM.Event.ConnectionLost`, `GSM.Event.Login`, `GSM.Event.LoginError`, `GSM.Event.Command`, `GSM.Event.Jackpot`, `GSM.Event.Balance`, `GSM.Event.Maintenance`, `GSM.Event.Error`。' },
+                        { name: 'callback', type: 'Function', desc: '事件觸發時執行的回呼函式，會接收事件詳情作為參數。' },
+                        { name: 'context', type: 'any?', desc: '可選的回呼函式執行的上下文 (`this`)。' }
+                    ],
+                    callbackDetails: `
+                        <p class="text-sm text-stone-600 mt-2"><b>` + "`ILogin` 的 `entity` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>interface ILogin {
+  cdoe: number;    // 登入回傳代碼
+  data: boolean;   // 是否成功登入
+  entity: any;     // 登入的資料內容
+  message: string; // 登入回應的訊息
+  ts: number;      // 時間戳記
+}</code></pre>
+                        <p class="text-sm text-stone-600 mt-4"><b>` + "`ICommand` 的 `entity` 結構範例：</b></p>" + `
+                        <pre class="bg-stone-100 text-stone-800 p-3 rounded-lg text-xs overflow-x-auto"><code>
+interface ICommand {
+  cmd: string;  // 回應的訊息標頭
+  code: string; // 回應代碼
+  entity: and;  // 回應的內容
+}</code></pre>
+                    `,
+                    example: `mySDK.addEventListener(GSM.Event.Balance, (evtParams: any) => {\n  console.log('新餘額: ' + data.balance);\n  this.sendNotification(evtParams.cmd, evtParams);\n}, this);`
+                },
+                removeEventListener: {
+                    name: 'removeEventListener(eventName: string, callback: Function): void',
+                    desc: '移除先前註冊的事件監聽器。',
+                    params: [
+                        { name: 'eventName', type: 'string', desc: '要移除監聽的事件名稱。' },
+                        { name: 'callback', type: 'Function', desc: '要移除的回呼函式。' }
+                    ],
+                    example: `const myBalanceHandler = (data) => {};\nmySDK.addEventListener(GSM.Event.Balance, myBalanceHandler, this);\n\n// ... 稍後移除\nmySDK.removeEventListener(GSM.Event.Balance, myBalanceHandler);`
+                }
+            };
+
+            const releaseNotesData = [
+                {
+                    version: "0.0.3",
+                    date: "2025-07-03",
+                    changes: [
+                        { type: "feature", text: "新增完整的斷線與重新連線流程，包含自動重試機制。" },
+                        { type: "feature", text: "新增 `SetRNG` 功能，允許客戶端設定亂數種子。" },
+                        { type: "feature", text: "新增 `HeartBeat` 事件，用於維持連線。" },
+                        { type: "improvement", text: "Spin 請求新增 `freeGameCard` 與 `freeSpinCard` 功能範例。" },
+                        { type: "improvement", text: "調整打包輸出，`dist` 目錄現在只包含 `index.js` 和 `index.d.ts`。" }
+                    ]
+                },
+                {
+                    version: "0.0.2",
+                    date: "2025-05-16",
+                    changes: [
+                        { type: "improvement", text: "`SettlePlay` 請求不再攜帶 `playerID` 及 `sessionID`，簡化請求參數。" },
+                        { type: "feature", text: "新增 `Change Balance` 功能，伺服器可主動推播餘額變更。" },
+                        { type: "feature", text: "新增完整的 `Jackpot` 流程，包含彩金池更新與中獎者推播。" },
+                        { type: "feature", text: "新增 `Maintenance` 流程，用於處理伺服器維護狀態。" }
+                    ]
+                },
+                {
+                    version: "0.0.1",
+                    date: "2025-04-15",
+                    changes: [
+                        { type: "feature", text: "新增 `Error` 流程，用於處理伺服器端錯誤。" },
+                        { type: "feature", text: "新增 `Spin` 和 `Settle` 核心遊戲流程。" },
+                        { type: "improvement", text: "統一調整專案內的所有名詞，使其更具一致性。" },
+                        { type: "initial", text: "SDK 初版發布，包含基本的連線、登入和事件處理功能。" }
+                    ]
+                }
+            ];
+
+            function renderReleaseNotes() {
+                releaseNotesContainer.innerHTML = releaseNotesData.map(release => `
+                    <div class="relative pl-8">
+                        <div class="absolute left-0 top-1 w-4 h-4 bg-teal-500 rounded-full border-4 border-stone-100"></div>
+                        <div class="absolute left-[7px] top-5 h-full w-0.5 bg-stone-200"></div>
+                        <h3 class="text-lg font-bold text-stone-800">Version ${release.version}</h3>
+                        <p class="text-sm text-stone-500 mb-3">${release.date}</p>
+                        <ul class="space-y-2">
+                            ${release.changes.map(change => `
+                                <li class="flex items-start">
+                                    <span class="release-tag mr-2 tag-${change.type}">${change.type === 'feature' ? '✨ 新功能' : change.type === 'improvement' ? '🚀 改進' : '🎉 初始版本'}</span>
+                                    <span class="text-stone-600">${change.text}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            }
+
+            // Navigation logic
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('data-target');
+                    navLinks.forEach(nav => nav.classList.remove('active'));
+                    link.classList.add('active');
+                    contentSections.forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            function renderApiDetail(key) {
+                const data = apiData[key];
+                if (!data) return;
+                let paramsHtml = '<p class="text-stone-500">無參數。</p>';
+                if (data.params.length > 0) {
+                    paramsHtml = data.params.map(p => `
+                        <div class="flex items-start">
+                            <code class="text-sm bg-stone-100 text-red-600 px-2 py-1 rounded">${p.name}</code>
+                            <span class="text-sm text-stone-500 mx-2">${p.type}</span>
+                            <p class="text-sm text-stone-600 flex-1">${p.desc}</p>
+                        </div>
+                    `).join('<div class="my-2 border-b border-stone-200"></div>');
+                }
+                apiDetail.innerHTML = `
+                    <div class="h-full">
+                        <h3 class="text-xl font-bold text-stone-800 mb-2">${data.name}</h3>
+                        <p class="text-stone-600 leading-relaxed mb-6">${data.desc}</p>
+                        <h4 class="font-bold text-stone-700 mb-3">參數</h4>
+                        <div class="space-y-3 mb-6">${paramsHtml}</div>
+                        ${data.bodyDetails ? `<h4 class="font-bold text-stone-700 mb-3">` + "`body` 參數結構詳情</h4>" + `<div class="mb-6">${data.bodyDetails}</div>` : ''}
+                        ${data.callbackDetails ? `<h4 class="font-bold text-stone-700 mb-3">` + "`callback` 參數詳情</h4>" + `<div class="mb-6">${data.callbackDetails}</div>` : ''}
+                        <h4 class="font-bold text-stone-700 mb-3">範例</h4>
+                        <div class="code-block-wrapper">
+                            <pre class="bg-stone-800 text-white p-4 rounded-lg text-sm overflow-x-auto"><code class="language-typescript">${data.example}</code></pre>
+                            <button class="copy-btn">複製</button>
+                        </div>
+                    </div>
+                `;
+                addCopyListeners();
+            }
+
+            function initApiReference() {
+                if (!apiList) return;
+                Object.keys(apiData).forEach((key, index) => {
+                    const item = document.createElement('li');
+                    item.innerHTML = `<a href="#" class="api-list-item block p-3 text-sm text-stone-700 hover:bg-stone-100 transition-colors duration-200">${apiData[key].name}</a>`;
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.api-list-item').forEach(el => el.classList.remove('active'));
+                        item.querySelector('a').classList.add('active');
+                        renderApiDetail(key);
+                    });
+                    apiList.appendChild(item);
+                    if (index === 0) {
+                        item.querySelector('a').classList.add('active');
+                        renderApiDetail(key);
+                    }
+                });
+            }
+
+            function addCopyListeners() {
+                document.querySelectorAll('.copy-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const pre = button.previousElementSibling;
+                        const code = pre.querySelector('code');
+                        const text = code.innerText;
+                        
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            button.innerText = '已複製!';
+                            setTimeout(() => { button.innerText = '複製'; }, 2000);
+                        } catch (err) {
+                            console.error('無法複製文字: ', err);
+                        }
+                        document.body.removeChild(textArea);
+                    });
+                });
+            }
+
+            // Initial render
+            initApiReference();
+            if (releaseNotesContainer) {
+                renderReleaseNotes();
+            }
+            addCopyListeners();
+        });
+    </script>
+</body>
+</html>
 
