@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest 說明手冊 (分頁式)</title>
+    <!-- 使用 Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        /* Tab navigation styling */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+        .tab-button {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #4b5563;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            color: #2e4a86;
+            border-bottom: 2px solid #2e4a86;
+        }
+        .tab-button:hover:not(.active) {
+            color: #1f2937;
+            border-bottom: 2px solid #9ca3af;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container mx-auto p-6 space-y-8">
+        <!-- Main Title Section -->
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800">Vitest 測試案例與說明文件</h1>
+            <p class="mt-2 text-lg text-gray-600">
+                本文件結合了 Vitest 的核心功能說明，旨在幫助您更全面地了解 Vitest 的運作方式。
+            </p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-button active" data-tab-target="tab-core-features">核心功能</button>
+            <button class="tab-button" data-tab-target="tab-test-flow">測試流程與環境</button>
+            <button class="tab-button" data-tab-target="tab-advanced-tools">進階工具與應用</button>
+        </nav>
+
+        <!-- Tab Content Containers -->
+        <div id="tab-core-features" class="tab-content active space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800">一、核心功能說明</h2>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">1. `expect()`：斷言與驗證</h3>
+                <p class="mt-4 text-gray-700">
+                    `expect()` 是測試中的「驗證工具」，用於斷言程式碼的實際執行結果是否符合預期。它必須搭配一個 `matcher` (匹配器) 使用。如果斷言失敗，測試就會標記為失敗。
+                </p>
+                <div class="mt-4 space-y-4">
+                    <p class="font-semibold text-gray-700">常用斷言範例：</p>
+                    <div class="space-y-2">
+                        <p class="font-semibold text-gray-700">`toBe()`：用於比對原始型別的值 (primitive values) 是否相等。</p>
+                        <pre><code>// 檢查值是否相等
+expect(1 + 2).toBe(3);
+</code></pre>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-semibold text-gray-700">`toEqual()`：用於比對物件或陣列等複雜型別的內容是否相同。</p>
+                        <pre><code>// 檢查物件內容是否相同
+const data = { one: 1, two: 2 };
+expect(data).toEqual({ one: 1, two: 2 });
+</code></pre>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-semibold text-gray-700">`toThrow()`：用於驗證函式是否會拋出錯誤。</p>
+                        <pre><code>// 檢查函式是否拋出特定錯誤
+const throwError = () => {
+  throw new Error('Something went wrong!');
+};
+expect(throwError).toThrow('Something went wrong!');
+</code></pre>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-semibold text-gray-700">`toHaveBeenCalled()`：用於驗證模擬函式 (mock function) 是否被呼叫過。</p>
+                        <pre><code>// 檢查模擬函式是否被呼叫
+const mockFn = vi.fn();
+mockFn();
+expect(mockFn).toHaveBeenCalled();
+</code></pre>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-semibold text-gray-700">實戰範例：在連線管理器測試中的應用</p>
+                        <pre><code>// 檢查 Client 構造函數是否被調用，使用 toHaveBeenCalledTimes() 驗證呼叫次數
+expect(Client).toHaveBeenCalledTimes(1);
+
+// 檢查 activate 是否被調用
+expect(mockClient.activate).toHaveBeenCalled();
+
+// 檢查是否觸發了廣播，使用 toHaveBeenCalledWith() 驗證參數
+expect(mockBroadcast).toHaveBeenCalledWith(
+    ServerEvent.Connection,
+    JSON.stringify({ success: true })
+);
+
+// 檢查連線狀態是否為 false
+expect(connectManager['isConnect']).toBe(false);
+</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">2. `vi.fn()`：模擬函式</h3>
+                <p class="mt-4 text-gray-700">
+                    `vi.fn()` 用於建立一個可追蹤的模擬函式（mock function）。它可以記錄函式被呼叫的次數、傳入的參數，並可以設定固定的回傳值或自訂行為。
+                </p>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>// 模擬 @stomp/stompjs 的 Client 類別，使其可被追蹤
+Client: vi.fn(),
+
+// 模擬 messageHandler 模組中的函式
+messageHandler: {
+    sendReconnectFinished: vi.fn(),
+    sendMsgCode: vi.fn(),
+},
+
+// 創建一個模擬的廣播函式
+mockBroadcast = vi.fn();
+</code></pre>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">3. `vi.mock()`：模組模擬</h3>
+                <p class="mt-4 text-gray-700">
+                    `vi.mock()` 用於模擬整個模組，將模組中原本的實作完全替換為一個假（mock）的實作。這在測試時隔離外部依賴（如 API 呼叫、資料庫連線等）非常有用。
+                </p>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>// 模擬 @stomp/stompjs 模組，避免實際的網路連線
+vi.mock('@stomp/stompjs', () => {
+    return {
+        Client: vi.fn(),
+    };
+});
+
+// 模擬 messageHandler 模組
+vi.mock('../src/core/messageHandler', () => ({
+    messageHandler: {
+        sendReconnectFinished: vi.fn(),
+        sendMsgCode: vi.fn(),
+    },
+}));
+</code></pre>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">4. `vi.spyOn()`：監聽</h3>
+                <p class="mt-4 text-gray-700">
+                    `vi.spyOn()` 用來「監聽」（spy）一個物件上的特定方法，同時可以選擇是否要模擬它的行為。它能讓你監控方法是否被呼叫、被呼叫了幾次以及帶了哪些參數。
+                </p>
+                <p class="font-semibold text-gray-700 mt-4">與 `vi.mock()` 的主要差異：</p>
+                <ul class="list-disc list-inside mt-2 text-gray-700 space-y-1">
+                    <li>`vi.mock()` 完全替換一個模組。</li>
+                    <li>`vi.spyOn()` 只是在原本的方法上加上監聽。</li>
+                </ul>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>// 使用 vi.spyOn() 監聽 mockClient.publish 方法，並模擬其行為
+const publishSpy = vi.spyOn(mockClient, 'publish').mockImplementation(() => {
+    throw new Error('Publish failed');
+});
+
+// 觸發發送消息
+connectManager.send(Request.Heartbeat, {});
+
+// 檢查是否正確處理了錯誤
+expect(publishSpy).toHaveBeenCalled();
+</code></pre>
+            </div>
+        </div>
+
+        <div id="tab-test-flow" class="tab-content space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800">二、測試流程與環境</h2>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">1. Test Suite (測試套件) 與測試生命週期</h3>
+                <p class="mt-4 text-gray-700">
+                    `describe()` 函式用於將相關的測試用例組織成一個「測試套件」（Test Suite）。而生命週期鉤子則確保每個測試都在乾淨的環境中運行。
+                </p>
+                <ul class="list-disc list-inside mt-2 text-gray-700 space-y-1">
+                    <li>`beforeEach()`：在每個 `it` 測試用例運行**前**執行一次。</li>
+                    <li>`afterEach()`：在每個 `it` 測試用例運行**後**執行一次。</li>
+                    <li>`beforeAll()`：在所有測試用例運行**前**執行一次。</li>
+                    <li>`afterAll()`：在所有測試用例運行**後**執行一次。</li>
+                </ul>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>// 使用 describe() 創建一個測試套件
+describe('ConnectManager', () => {
+    // beforeEach() 在每個測試前執行，用於初始化測試環境
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockClient = createMockClient();
+        vi.mocked(Client).mockImplementation(() => mockClient);
+        mockBroadcast = vi.fn();
+        connectManager = new ConnectManager(
+            { host: 'test.com', port: 8080 },
+            mockBroadcast
+        );
+    });
+
+    // afterEach() 在每個測試後執行，用於清理環境
+    afterEach(async () => {
+        if (connectManager) {
+            await connectManager.disconnect();
+        }
+    });
+
+    // 使用 it() 定義一個單獨的測試用例
+    it('當 serverUrl 為空時不應建立連線', async () => {
+        // ... 測試內容
+    });
+});
+</code></pre>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">2. 非同步測試</h3>
+                <p class="mt-4 text-gray-700">
+                    Vitest 能夠輕鬆處理非同步程式碼的測試。您可以使用 `async/await` 語法來等待 `Promise` 的解析，或使用 `resolves` 和 `rejects` 匹配器來驗證 `Promise` 的結果。
+                </p>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>// 使用 async/await 語法等待非同步方法完成
+it('應該正確初始化 STOMP 客戶端並建立連線', async () => {
+    await connectManager.connect();
+    expect(Client).toHaveBeenCalledTimes(1);
+});
+</code></pre>
+            </div>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">3. 虛擬計時器與日期 (Fake Timers & Mock Date)</h3>
+                <p class="mt-4 text-gray-700">
+                    在測試中，您可能需要控制時間的流逝，例如測試 `setTimeout` 或 `setInterval`。
+                </p>
+                <ul class="list-disc list-inside mt-2 text-gray-700 space-y-1">
+                    <li>`vi.useFakeTimers()`：啟用虛擬計時器，讓您能夠手動控制時間。</li>
+                    <li>`vi.advanceTimersByTime(ms)`：手動推進虛擬時間。</li>
+                    <li>`vi.useRealTimers()`：將計時器恢復為真實的。</li>
+                    <li>`vi.setSystemTime(date)`：設定模擬的系統時間，用於測試與日期相關的邏輯。</li>
+                </ul>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <pre class="mt-2"><code>describe('心跳檢測', () => {
+    beforeEach(() => {
+        // 啟用虛擬計時器
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        // 恢復真實計時器
+        vi.useRealTimers();
+    });
+
+    it('應該在心跳超時時觸發斷線處理', async () => {
+        // ...
+        // 手動推進虛擬時間，模擬超時
+        vi.advanceTimersByTime(connectManager['HEARTBEAT_INTERVAL'] + 1000);
+
+        // 檢查斷線處理
+        expect(connectManager['isConnect']).toBe(false);
+    });
+});
+</code></pre>
+            </div>
+        </div>
+        
+        <div id="tab-advanced-tools" class="tab-content space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800">三、進階工具與應用</h2>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">1. 模擬函式的清理與驗證</h3>
+                <p class="mt-4 text-gray-700">
+                    以下為 Vitest 中常用的模擬函式清理與驗證方法。
+                </p>
+                <p class="font-semibold text-gray-700 mt-4">清理方法 (Mock Cleanup)：</p>
+                <ul class="list-disc list-inside mt-2 text-gray-700 space-y-1">
+                    <li>`mockClear()`：清除模擬函式的呼叫紀錄，但保留其模擬行為。</li>
+                    <li>`mockReset()`：清除呼叫紀錄，並重置其模擬行為，回到 `vi.fn()` 的初始狀態。</li>
+                    <li>`mockRestore()`：清除呼叫紀錄，並將模擬函式恢復到原始實作。</li>
+                </ul>
+                <p class="font-semibold text-gray-700 mt-4">實戰範例：在連線管理器測試中的應用</p>
+                <ul class="list-disc list-inside mt-2 text-gray-700 space-y-1">
+                    <li>在 `beforeEach` 中，您使用了 `vi.clearAllMocks();` 來清除所有模擬的狀態，確保每個測試都是獨立且乾淨的。</li>
+                </ul>
+            </div>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">2. 快照測試 (Snapshot Testing)</h3>
+                <p class="mt-4 text-gray-700">
+                    快照測試會將某個物件的當前狀態「快照」儲存為一個檔案。當下次運行測試時，會將新的結果與儲存的快照進行比對。
+                </p>
+            </div>
+            
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">3. 測試覆蓋率 (Test Coverage)</h3>
+                <p class="mt-4 text-gray-700">
+                    測試覆蓋率用於衡量您的測試程式碼涵蓋了多少應用程式程式碼。這是一個重要的指標。
+                </p>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-2xl font-bold text-gray-800">4. 設定檔 (Configuration File)</h3>
+                <p class="mt-4 text-gray-700">
+                    Vitest 允許您透過設定檔 (`vitest.config.ts`) 來配置其行為。
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tabTarget;
+
+                    // 移除所有 tab 的 active 狀態
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // 為當前點擊的 tab 加上 active 狀態
+                    tab.classList.add('active');
+
+                    // 隱藏所有內容區塊
+                    contents.forEach(content => content.classList.remove('active'));
+                    // 顯示目標內容區塊
+                    document.getElementById(target).classList.add('active');
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
