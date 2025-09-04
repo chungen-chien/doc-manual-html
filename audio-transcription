@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac 語音轉逐字稿指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 複製自原檔案的完整 CSS 樣式 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1F2937;
+            color: #E5E7EB;
+        }
+        .master-detail-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .master-panel {
+            width: 310px;
+            background-color: #111827;
+            padding: 2rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid #374151;
+        }
+        .master-panel a {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #D1D5DB;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .master-panel a:hover {
+            background-color: #374151;
+            color: #6EE7B7;
+        }
+        .master-panel a.active {
+            background-color: #6EE7B7;
+            color: #1F2937;
+            font-weight: 600;
+        }
+        .master-panel h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #6EE7B7;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .detail-panel {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .section-header {
+            border-bottom: 2px solid #6EE7B7;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        pre {
+            background-color: #111827;
+            color: #E5E7EB;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #374151;
+            color: #D1D5DB;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #4B5563;
+        }
+        code {
+            font-family: monospace;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="master-detail-container">
+        <div class="master-panel shadow-xl">
+            <h2 class="text-2xl font-bold text-teal-300 mb-6">導覽</h2>
+            <nav class="space-y-2">
+                <h3>教學 (Tutorials)</h3>
+                <a href="#prerequisites" class="active">1. 前置作業</a>
+                <a href="#environment-setup">2. 建置專屬環境</a>
+                <a href="#model-install">3. 安裝 Whisper 模型</a>
+                <a href="#transcription">4. 音檔轉錄與優化</a>
+                <a href="#conclusion">5. 結語與其他用途</a>
+            </nav>
+        </div>
+
+        <div class="detail-panel">
+            <header class="py-6">
+                <h1 class="text-4xl font-extrabold text-white mb-2">Mac 語音轉逐字稿指南：使用終端機快速轉譯</h1>
+                <p class="text-lg text-gray-400">
+                    這份指南將帶你從零開始，使用 Mac 終端機建置一個專門的環境，用來將音訊檔案轉錄成逐字稿。
+                </p>
+            </header>
+
+            <section id="prerequisites" class="content-section active">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">1. 前置作業</h2>
+                <p class="text-gray-400 mb-2">
+                    在開始之前，你需要先安裝兩個重要的工具：
+                    <ul>
+                        <li><strong class="text-white">Homebrew</strong> ：Mac 上的套件管理器，可以幫我們輕鬆安裝其他軟體。</li>
+                        <li><strong class="text-white">FFmpeg</strong> ：一個強大的影音處理工具，轉譯過程需要用它來處理音檔。</li>
+                    </ul>
+                </p>
+                <p class="text-gray-400 mb-2">
+                    在你的「 終端機 」中，依序輸入以下指令來安裝：
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install ffmpeg</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <section id="environment-setup" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">2. 建置專屬環境</h2>
+                <p class="text-gray-400 mb-2">
+                    為了避免與系統內建的 Python 衝突，我們會建立一個獨立的虛擬環境，並指定安裝 <strong class="text-white">Python 3.11</strong> 版本。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">brew install python@3.11</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                <p class="text-gray-400 mb-2">
+                    建立虛擬環境：
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">python3.11 -m venv whisper_env</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                <p class="text-gray-400 mb-2">
+                    啟動虛擬環境： 當終端機前面出現 <span class="text-teal-300">(whisper_env)</span> 時，表示你已成功啟動環境。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">source whisper_env/bin/activate</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <section id="model-install" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">3. 安裝 Whisper 模型</h2>
+                <p class="text-gray-400 mb-2">
+                    現在，在這個專屬的虛擬環境中，我們來安裝核心的轉譯工具 <strong class="text-white">OpenAI Whisper</strong> 。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">pip install openai-whisper</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <section id="transcription" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">4. 音檔轉錄與優化</h2>
+                <p class="text-gray-400 mb-2">
+                    在轉譯之前，需要先將音檔優化為適合辨識的 <strong class="text-white">.wav</strong> 格式。這一步很重要，可以大幅提高轉譯的準確性。請將您的音檔 (例如 'my_audio.mp3' 或 'my_audio.m4a') 放在一個方便的位置，然後使用以下指令進行轉換。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">ffmpeg -i "my_audio.mp3" -acodec pcm_s16le -ac 1 -ar 16000 "my_audio.wav"</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                <p class="font-bold text-gray-200 text-xl mt-4 mb-2">
+                    方法一：
+                </p>
+                <p class="text-gray-400 mb-2">
+                    接下來，使用以下指令進行轉錄。這裡的 '-l' 參數指定了語言為「中文」，'--model' 參數指定了使用的模型大小。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">whisper "my_audio.wav" --language Chinese --model medium</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                <p class="text-gray-300 mt-2 mb-2">
+                    完成後，系統會自動在同一個資料夾中產生多種格式的逐字稿，例如 '.txt' 和 '.vtt'。
+                </p>
+                <p class="font-bold text-gray-200 text-xl mt-4 mb-2">
+                    方法二：
+                </p>
+                <p class="text-gray-400 mb-2">
+                    這邊提供python轉檔程式代碼，使用代碼執行。（需先建立檔案，在下指令執行該檔）
+                </p>
+                <div class="relative">
+                    <pre><code class="language-bash">python3 myTransfer.py</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                <p class="text-gray-300 mt-2 mb-2">
+                    完成後，系統會自動在同一個資料夾中產生 '.txt' 格式的逐字稿。
+                </p>
+                <p class="text-gray-400 mb-2">
+                    提供 python 程式碼
+                </p>
+                <div class="relative mt-2">
+                    <pre><code class="language-bash"># myTransfer.py
+import os
+import sys
+import math
+import subprocess
+import whisper
+from tqdm import tqdm
+
+# ---------- 使用者設定 ----------
+FILE_NAME = "part4" # 修改指定的音檔名稱
+AUDIO_FILE_NAME = FILE_NAME + ".wav"  # 音檔名稱
+SEARCH_PATHS = [
+    "/Users/chungen/record/meeting",
+]
+OUTPUT_TRANSCRIPT = FILE_NAME + ".txt"
+LANGUAGE = "zh"
+CHUNK_MINUTES = 10   # 每段切割 10 分鐘
+MODEL_SIZE = None    # 執行時詢問模型大小
+
+# ---------- 尋找音檔 ----------
+AUDIO_FILE = None
+for path in SEARCH_PATHS:
+    full_path = os.path.join(path, AUDIO_FILE_NAME)
+    if os.path.isfile(full_path):
+        AUDIO_FILE = full_path
+        break
+
+if AUDIO_FILE is None:
+    print(f"❌ 找不到音檔 '{AUDIO_FILE_NAME}'，請確認 SEARCH_PATHS 是否正確")
+    sys.exit(1)
+
+print(f"✅ 找到音檔：{AUDIO_FILE}")
+
+# ---------- 詢問模型 ----------
+available_models = ["tiny", "base", "small", "medium", "large"]
+print("\n請選擇 Whisper 模型大小：")
+for i, m in enumerate(available_models, 1):
+    print(f"{i}. {m}")
+choice = input("輸入數字 (預設 3=small): ").strip()
+if choice.isdigit() and 1 <= int(choice) <= len(available_models):
+    MODEL_SIZE = available_models[int(choice)-1]
+else:
+    MODEL_SIZE = "small"
+
+print(f"👉 使用模型：{MODEL_SIZE}")
+
+# ---------- 載入 Whisper ----------
+print(f"正在載入 Whisper 模型：{MODEL_SIZE} ...")
+whisper_model = whisper.load_model(MODEL_SIZE)
+
+# ---------- 取得音檔長度 ----------
+def get_audio_duration(filename):
+    """使用 ffprobe 取得音檔長度（秒）"""
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries",
+            "format=duration", "-of",
+            "default=noprint_wrappers=1:nokey=1", filename],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    return float(result.stdout)
+
+duration = get_audio_duration(AUDIO_FILE)
+print(f"音檔總長度：約 {duration/60:.1f} 分鐘")
+
+# ---------- 切割音檔並辨識 ----------
+chunk_length = CHUNK_MINUTES * 60  # 轉成秒
+num_chunks = math.ceil(duration / chunk_length)
+
+print(f"正在切割音檔，每段 {CHUNK_MINUTES} 分鐘，共 {num_chunks} 段...")
+transcript = []
+
+for i in tqdm(range(num_chunks), desc="處理進度"):
+    start_time = i * chunk_length
+    end_time = min((i+1) * chunk_length, duration)
+    chunk_file = f"chunk_{i:03d}.wav"
+
+    # 使用 ffmpeg 擷取片段
+    subprocess.run([
+        "ffmpeg", "-y", "-i", AUDIO_FILE,
+        "-ss", str(start_time), "-to", str(end_time),
+        "-ar", "16000", "-ac", "1",
+        chunk_file, "-loglevel", "quiet"
+    ])
+
+    # Whisper 辨識
+    result = whisper_model.transcribe(chunk_file, language=LANGUAGE)
+
+    # 逐行輸出（依 segments）
+    lines = []
+    for seg in result.get("segments", []):
+        seg_start = seg["start"] + start_time
+        seg_end = seg["end"] + start_time
+        seg_text = seg["text"].strip()
+        lines.append(f"[{seg_start/60:.1f}-{seg_end/60:.1f} 分鐘] {seg_text}")
+
+    transcript.extend(lines)
+    os.remove(chunk_file)
+
+# ---------- 輸出逐字稿 ----------
+with open(OUTPUT_TRANSCRIPT, "w", encoding="utf-8") as f:
+    for line in transcript:
+        f.write(line + "\n")
+
+print(f"🎉 完成！逐字稿已輸出：{OUTPUT_TRANSCRIPT}")
+                        </code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <section id="conclusion" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">5. 結語與其他用途</h2>
+                <p class="text-gray-400 mb-2">
+                    恭喜你！現在你已經掌握了使用 Mac 終端機進行語音轉逐字稿的基礎流程。你可以根據需求調整模型大小，例如使用 'tiny', 'base', 'small', 'medium', 'large'，來權衡轉譯速度與準確性。
+                </p>
+                <p class="text-gray-400 mb-2">
+                    這個方法不僅適用於語音轉文字，也可以用於影片，只需將影片檔案作為輸入，Whisper 就會自動提取音訊進行轉錄。
+                </p>
+            </section>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.master-panel a');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    navLinks.forEach(nav => nav.classList.remove('active'));
+                    contentSections.forEach(content => content.classList.remove('active'));
+
+                    link.classList.add('active');
+
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        document.querySelector('.detail-panel').scrollTop = 0;
+                    }
+                });
+            });
+
+            function addCopyListeners() {
+                document.querySelectorAll('.copy-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const pre = button.previousElementSibling;
+                        const code = pre.querySelector('code');
+                        const text = code.innerText;
+                        
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            button.innerText = '已複製!';
+                            setTimeout(() => { button.innerText = '複製'; }, 2000);
+                        } catch (err) {
+                            console.error('無法複製文字: ', err);
+                            button.innerText = '複製失敗';
+                        }
+                        document.body.removeChild(textArea);
+                    });
+                });
+            }
+            addCopyListeners();
+        });
+    </script>
+</body>
+</html>
