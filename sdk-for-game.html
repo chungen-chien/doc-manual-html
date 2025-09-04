@@ -1,1 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遊戲中介軟體 SDK 技術文件 (Diátaxis)</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS for a dark theme and master-detail layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1F2937;
+            color: #E5E7EB;
+        }
 
+        /* Main container for the master-detail view */
+        .master-detail-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Left-side master panel (navigation) */
+        .master-panel {
+            width: 310px;
+            background-color: #111827;
+            padding: 2rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid #374151;
+        }
+
+        .master-panel a {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #D1D5DB;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .master-panel a:hover {
+            background-color: #374151;
+            color: #6EE7B7;
+        }
+
+        .master-panel a.active {
+            background-color: #6EE7B7;
+            color: #1F2937;
+            font-weight: 600;
+        }
+
+        /* Detail panel heading for main sections */
+        .master-panel h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #6EE7B7;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Right-side detail panel (content) */
+        .detail-panel {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            border-bottom: 2px solid #6EE7B7;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            border: 1px solid #374151;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Styling for pre and code blocks */
+        pre {
+            background-color: #111827;
+            color: #E5E7EB;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #374151;
+            color: #D1D5DB;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .copy-btn:hover {
+            background-color: #4B5563;
+        }
+
+        code {
+            font-family: monospace;
+        }
+        
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #4B5563;
+        }
+
+        th {
+            background-color: #111827;
+            color: #6EE7B7;
+        }
+        
+        /* Content section visibility control */
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="master-detail-container">
+        <!-- Master Panel (Left-side navigation) -->
+        <div class="master-panel shadow-xl">
+            <h2 class="text-2xl font-bold text-teal-300 mb-6">導覽</h2>
+            <nav class="space-y-2">
+                <h3>教學 (Tutorials)</h3>
+                <a href="#tutorial-quickstart" class="active">快速入門</a>
+                
+                <h3>操作指引 (How-to guides)</h3>
+                <a href="#howto-send-command">如何發送遊戲指令</a>
+                <a href="#howto-reconnect">如何處理連線中斷</a>
+
+                <h3>概念說明 (Explanation)</h3>
+                <a href="#explanation-overview">SDK 總覽與價值</a>
+                <a href="#explanation-architecture">核心架構</a>
+
+                <h3>參考資料 (Reference)</h3>
+                <a href="#reference-api">API 參考</a>
+                <a href="#reference-events">事件參考</a>
+                <a href="#reference-codes">錯誤碼參考</a>
+            </nav>
+        </div>
+
+        <!-- Detail Panel (Right-side content) -->
+        <div class="detail-panel">
+            <header class="py-6">
+                <h1 class="text-4xl font-extrabold text-white mb-2">遊戲中介軟體 SDK 技術文件 (Diátaxis)</h1>
+                <p class="text-lg text-gray-400">
+                    本文件以 Diátaxis 框架重新組織，旨在幫助開發者更有效地學習和查閱 SDK 資訊。
+                </p>
+            </header>
+            
+            <!-- 1. 教學: 快速入門 -->
+            <section id="tutorial-quickstart" class="content-section active">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">教學: 快速入門</h2>
+                <p class="text-gray-400 mb-2">
+                    本教學將帶您完成專案設定，並成功建立與後端服務的連線與登入。
+                </p>
+                
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 1: 專案設定</h3>
+                <p class="text-gray-400 mb-2">
+                    確保您的專案支援 ES 模組，並安裝 SDK 的依賴項。您需要確保 <code>package.json</code> 中的 <code>type</code> 設為 <code>module</code>。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-json">{
+  "type": "module"
+}</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 2: 建立與登入</h3>
+                <p class="text-gray-400 mb-2">
+                    使用 <code>GSMiddleware</code> 類別建立實例，並呼叫 <code>connect()</code> 和 <code>login()</code> 方法。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">import { GSMiddleware, GSM } from './dist/index.js'; // 請根據您的打包路徑調整
+
+// 設定連線配置
+const config = {
+    host: 'ws://your-game-server.com',
+    port: 8080,
+    uidA: 'user-001',
+    userName: 'player123',
+    gameLoginName: 'game_lobby',
+    gameType: 1,
+    gameId: 101,
+};
+
+// 建立 SDK 實例
+const gameSDK = new GSMiddleware(config);
+
+// 註冊連線事件監聽器
+gameSDK.addEventListener(GSM.Event.Connection, (event) => {
+    const { success } = event.detail;
+    if (success) {
+        console.log('連線成功，正在嘗試登入...');
+        gameSDK.login();
+    } else {
+        console.log('連線失敗。');
+    }
+});
+
+// 註冊登入事件監聽器
+gameSDK.addEventListener(GSM.Event.Login, (event) => {
+    const { code, data, entity } = event.detail;
+    if (code === 0 && data) {
+        console.log('登入成功！玩家資訊:', entity);
+    } else {
+        console.log('登入失敗:', event.detail);
+    }
+});
+
+// 啟動連線流程
+gameSDK.connect();</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <!-- 2. 操作指引: 如何發送遊戲指令 -->
+            <section id="howto-send-command" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">操作指引: 如何發送遊戲指令</h2>
+                <p class="text-gray-400 mb-2">
+                    本指南將帶您完成從客戶端發送指令到接收伺服器回傳的完整流程。
+                </p>
+                
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 1: 發送指令</h3>
+                <p class="text-gray-400 mb-2">
+                    使用 <code>send()</code> 方法來發送特定的遊戲指令，例如 <code>Spin</code> 或 <code>Settle</code>。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">// 發送 Spin 指令
+const spinPayload = {
+    // 根據伺服器要求提供具體的 Spin 參數
+    line: 1,
+    bet: 10,
+};
+gameSDK.send(GSM.Request.Spin, JSON.stringify(spinPayload));</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 2: 處理回傳結果</h3>
+                <p class="text-gray-400 mb-2">
+                    監聽 <code>GSM.Event.Command</code> 事件，並根據 <code>cmd</code> 屬性來判斷是哪一個指令的回傳結果。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">// 監聽回傳的指令結果
+gameSDK.addEventListener(GSM.Event.Command, (event) => {
+    const { cmd, code, entity } = event.detail;
+    if (cmd === GSM.Command.Spin) {
+        if (code === 0) {
+            console.log('Spin 成功，回傳結果:', entity);
+        } else {
+            console.error('Spin 失敗:', event.detail);
+        }
+    }
+});</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <!-- 3. 操作指引: 如何處理連線中斷與重新連線 -->
+            <section id="howto-reconnect" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">操作指引: 如何處理連線中斷與重新連線</h2>
+                <p class="text-gray-400 mb-2">
+                    本指南說明如何在網路不穩定時，確保遊戲連線的穩定性。
+                </p>
+
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 1: 監聽連線中斷事件</h3>
+                <p class="text-gray-400 mb-2">
+                    當連線中斷時，SDK 會廣播 <code>ConnectionLost</code> 事件。您需要監聽此事件。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">gameSDK.addEventListener(GSM.Event.ConnectionLost, (event) => {
+    const { reason } = event.detail;
+    console.warn(`連線中斷，原因: ${reason}`);
+});</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 2: 觸發重連流程</h3>
+                <p class="text-gray-400 mb-2">
+                    在監聽到 <code>ConnectionLost</code> 事件後，呼叫 <code>reconnect()</code> 方法來觸發自動重連流程。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">gameSDK.addEventListener(GSM.Event.ConnectionLost, (event) => {
+    const { reason } = event.detail;
+    console.warn(`連線中斷，原因: ${reason}`);
+    gameSDK.reconnect();
+});</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+                
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">步驟 3: 處理重連結果</h3>
+                <p class="text-gray-400 mb-2">
+                    監聽 <code>GSM.Event.Connection</code> 事件，以得知重連是否成功。
+                </p>
+                <div class="relative">
+                    <pre><code class="language-typescript">gameSDK.addEventListener(GSM.Event.Connection, (event) => {
+    const { success } = event.detail;
+    if (success) {
+        console.log('重新連線成功！');
+        // 您可能需要在這裡重新發送一些未完成的指令
+    } else {
+        console.log('重新連線失敗，請手動重試。');
+    }
+});</code></pre>
+                    <button class="copy-btn">複製</button>
+                </div>
+            </section>
+
+            <!-- 4. 概念說明: SDK 總覽與價值 -->
+            <section id="explanation-overview" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">概念說明: SDK 總覽與價值</h2>
+                <p class="text-gray-400 mb-4">
+                    此 SDK 旨在為遊戲客戶端與後端服務器之間建立一個**穩定、可靠、易於維護**的通訊層。其核心商業邏輯在於提供一個穩定、高效且安全的橋樑，將底層的技術複雜性抽象化，使得遊戲產品能夠更快速、穩定、安全地推向市場。
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-gray-400">
+                    <li>**簡化開發**：封裝複雜的網路通訊、資料處理等底層邏輯，讓開發者能專注於遊戲玩法與使用者體驗。</li>
+                    <li>**確保資料安全**：透過標準化協定與錯誤處理，確保玩家餘額、遊戲結果等交易資料在傳輸時的準確性與完整性。</li>
+                    <li>**提升使用者體驗**：支援實時互動、內建斷線重連機制與即時事件通知，提供流暢、不中斷的遊戲體驗。</li>
+                    <li>**支援多樣化遊戲功能**：模組化設計易於擴展，能快速支援會話管理、彩金系統、玩家資產管理等多樣化功能。</li>
+                    <li>**易於維護與升級**：核心通訊邏輯集中在 SDK 中，當後端服務升級時，僅需更新 SDK，大幅減少客戶端的修改。</li>
+                </ul>
+            </section>
+            
+            <!-- 5. 概念說明: 核心架構 -->
+            <section id="explanation-architecture" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">概念說明: 核心架構</h2>
+                <p class="text-gray-400">
+                    SDK 採用模組化設計，主要由以下幾個核心類別組成，每個類別各司其職：
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-gray-400 mt-4">
+                    <li><code>GSMiddleware.ts</code>：SDK 的**對外入口**。負責協調其他模組，並提供高階 API。</li>
+                    <li><code>ConnectManager.ts</code>：**連線管理核心**。負責 WebSocket 和 STOMP 的連線建立、斷開、訂閱和發送訊息。</li>
+                    <li><code>EventHandler.ts</code>：**事件廣播系統**。負責將來自 <code>ConnectManager</code> 的底層訊息轉換為 <code>CustomEvent</code> 並廣播。</li>
+                    <li><code>MessageHandler.ts</code>：**跨框架通訊**。處理 SDK 在 iframe 中運行時與父視窗的通訊。</li>
+                </ul>
+            </section>
+
+            <!-- 6. 參考資料: API 參考 -->
+            <section id="reference-api" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">參考資料: API 參考</h2>
+                <p class="text-gray-400 mb-2">這是遊戲客戶端可以使用的所有公共方法。</p>
+                <div class="relative">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>方法</th>
+                                <th>參數</th>
+                                <th>回傳值</th>
+                                <th>說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>constructor(data: IConfig)</code></td><td><code>data: IConfig</code></td><td>N/A</td><td>建立 SDK 實例。</td></tr>
+                            <tr><td><code>connect(): Promise&lt;void&gt;</code></td><td>無</td><td><code>Promise&lt;void&gt;</code></td><td>建立 WebSocket 和 STOMP 連線。</td></tr>
+                            <tr><td><code>disconnect(): Promise&lt;void&gt;</code></td><td>無</td><td><code>Promise&lt;void&gt;</code></td><td>斷開連線。</td></tr>
+                            <tr><td><code>reconnect(): Promise&lt;void&gt;</code></td><td>無</td><td><code>Promise&lt;void&gt;</code></td><td>執行連線重連流程（內部會嘗試 3 次，每次間隔 5 秒）。</td></tr>
+                            <tr><td><code>isConnected(): boolean</code></td><td>無</td><td><code>boolean</code></td><td>檢查 SDK 是否已連線。</td></tr>
+                            <tr><td><code>login(): void</code></td><td>無</td><td><code>void</code></td><td>呼叫玩家登入指令。</td></tr>
+                            <tr><td><code>send(...)</code></td><td><code>request: GSM.Request</code> <br> <code>body?: string</code> <br> <code>headers?: StompHeaders</code></td><td><code>void</code></td><td>向伺服器發送指令。</td></tr>
+                            <tr><td><code>addEventListener(...)</code></td><td><code>type: string</code> <br> <code>listener: EventListener</code></td><td><code>void</code></td><td>監聽指定的 SDK 事件。</td></tr>
+                            <tr><td><code>removeEventListener(...)</code></td><td><code>type: string</code> <br> <code>listener: EventListener</code></td><td><code>void</code></td><td>移除指定的事件監聽器。</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 7. 參考資料: 事件參考 -->
+            <section id="reference-events" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">參考資料: 事件參考</h2>
+                <p class="text-gray-400 mb-2">SDK 廣播的事件及其回傳的 <code>CustomEvent.detail</code> 資料結構。</p>
+                <div class="relative">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>事件 (<code>GSM.Event</code>)</th>
+                                <th>說明</th>
+                                <th><code>detail</code> 資料結構範例</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>Connection</code></td><td>連線成功或失敗。</td><td><code>{ success: boolean }</code></td></tr>
+                            <tr><td><code>ConnectionLost</code></td><td>連線中斷。</td><td><code>{ reason: number }</code></td></tr>
+                            <tr><td><code>Login</code></td><td>登入成功。</td><td><code>{ code: number, data: boolean, entity: any, message: string }</code></td></tr>
+                            <tr><td><code>LoginError</code></td><td>登入失敗。</td><td><code>{ errorMessage: string, errorCode: number }</code></td></tr>
+                            <tr><td><code>Command</code></td><td>伺服器回傳指令。</td><td><code>{ cmd: string, code: number, entity: any }</code></td></tr>
+                            <tr><td><code>Balance</code></td><td>玩家餘額變動。</td><td><code>{ cmd: string, balance: number, ts: number }</code></td></tr>
+                            <tr><td><code>Jackpot</code></td><td>彩金池數值更新或中獎通知。</td><td><code>{ cmd: string, typeItems: any[] }</code></td></tr>
+                            <tr><td><code>Error</code></td><td>伺服器錯誤訊息。</td><td><code>{ cmd: string, isForceDisconnect: boolean, entity: { code: number, message: string } }</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 8. 參考資料: 錯誤碼參考 -->
+            <section id="reference-codes" class="content-section">
+                <h2 class="section-header text-teal-300 text-3xl mb-4">參考資料: 錯誤碼參考</h2>
+                <p class="text-gray-400 mb-2">
+                    以下是 SDK 相關的常數與錯誤碼，它們在 <code>utils/contents.ts</code> 和 <code>utils/codes.ts</code> 中定義。
+                </p>
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">常數 (`contents.ts`)</h3>
+                <ul class="list-disc list-inside space-y-1 text-gray-400">
+                    <li><code>GSM.Event</code>: SDK 廣播事件的列舉。</li>
+                    <li><code>GSM.Command</code>: 可發送的遊戲指令列舉。</li>
+                    <li><code>GSM.Request</code>: 發送給伺服器請求的列舉。</li>
+                </ul>
+                <h3 class="text-2xl font-semibold text-white mt-4 mb-2">錯誤碼 (`codes.ts`)</h3>
+                <div class="relative">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>錯誤碼</th>
+                                <th>符號</th>
+                                <th>說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>1</code></td><td><code>DISCONNECT</code></td><td>連線已斷開。</td></tr>
+                            <tr><td><code>4</code></td><td><code>CONNECT_FAIL</code></td><td>連線失敗。</td></tr>
+                            <tr><td><code>901</code></td><td><code>SUBSCRIPTION_WITHOUT_CONNECT</code></td><td>嘗試在未連線狀態下訂閱。</td></tr>
+                            <tr><td><code>902</code></td><td><code>DUPLICATE_SUBSCRIPTION</code></td><td>重複訂閱相同的目標。</td></tr>
+                            <tr><td><code>903</code></td><td><code>SUBSCRIPTION_JACKPOT_ERROR</code></td><td>彩金訂閱時發生錯誤。</td></tr>
+                            <tr><td><code>904</code></td><td><code>BROADCAST_FAIL</code></td><td>事件廣播時發生內部錯誤。</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        // JavaScript to handle the Master-Detail functionality and copy-to-clipboard
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.master-panel a');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            // Handle click events on navigation links
+            navLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+
+                    // Remove active state from all links and content sections
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    contentSections.forEach(section => section.classList.remove('active'));
+
+                    // Add active state to the clicked link and its corresponding content section
+                    event.currentTarget.classList.add('active');
+                    const targetId = event.currentTarget.getAttribute('href').substring(1);
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        // Scroll the detail panel to the top
+                        document.querySelector('.detail-panel').scrollTop = 0;
+                    }
+                });
+            });
+
+            // Handle the copy-to-clipboard functionality for code blocks
+            function addCopyListeners() {
+                document.querySelectorAll('.copy-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const pre = button.previousElementSibling;
+                        const code = pre.querySelector('code');
+                        const text = code.innerText;
+                        
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            button.innerText = '已複製!';
+                            setTimeout(() => { button.innerText = '複製'; }, 2000);
+                        } catch (err) {
+                            console.error('無法複製文字: ', err);
+                            button.innerText = '複製失敗';
+                        }
+                        document.body.removeChild(textArea);
+                    });
+                });
+            }
+            addCopyListeners();
+        });
+    </script>
+</body>
+</html>
